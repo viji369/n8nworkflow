@@ -1,0 +1,183 @@
+{
+  "name": "note genesis",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lecture-input",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "230ba2b0-0666-4577-add8-ba1bb5d3776b",
+      "name": "Webhook",
+      "webhookId": "4e417c08-b7a6-42cb-be51-5c5a41016add"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.candidates[0].content.parts[0].text;\n\n// Clean string\nconst cleaned = raw\n  .replace(/\\\\n/g, '')\n  .replace(/\\\\\"/g, '\"')\n  .trim();\n\n// Extract JSON\nconst jsonStart = cleaned.indexOf('{');\nconst jsonString = cleaned.slice(jsonStart);\n\n// Parse safely\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonString);\n} catch (e) {\n  parsed = { error: \"Parsing failed\", raw: cleaned };\n}\n\nreturn [{\n  summary: parsed.summary,\n  key_points: parsed.key_points,\n  actions: parsed.actions\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        16
+      ],
+      "id": "2a7f0d56-3a28-40e5-93d6-98c993d4e9f4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-goog-api-key",
+              "value": "AIzaSyBq8Yw3M4m5sYSHB0hFZWQsGCSqDY5P920"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Explain how AI works in a few words\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        384,
+        16
+      ],
+      "id": "6c7befed-f900-4cd5-9f0a-2dbaeca737b9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a8830513-3d8f-4e8e-85fb-39b744b6b12b",
+              "name": "lecture",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        16
+      ],
+      "id": "206881f9-8f44-4952-96cf-b51aa4eb912f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        768,
+        16
+      ],
+      "id": "6adb6958-85a4-4b78-a7ed-f678aaa1e3be",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        16
+      ],
+      "id": "f9a6e502-161c-468a-995e-d759d8fd5770",
+      "name": "Extract from File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5375680e-b8c0-4764-b0da-d6756bbc3643",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c75a397d4401f4f9c8b7acf86c246413e4b0343b53d11482ea4382ab7d8c9d95"
+  },
+  "id": "6mnHiaNLAkyEMit6",
+  "tags": []
+}
